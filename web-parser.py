@@ -45,7 +45,7 @@ def parse_phrases(page):
 
 def main():
 
-    kyobo = {'cp': 'kyobo', 'max_index': 1}
+    kyobo = {'cp': 'kyobo', 'max_index': 6}
 
     date = get_date()
     save_file = open('save.txt', 'w')
