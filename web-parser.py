@@ -36,10 +36,11 @@ def parse_phrases(page):
     length = len(phrases)
     for i in range(length):
         phrases[i] = re.sub('<br/>', '\n', phrases[i])
-        phrases[i] = re.sub('\n*---.+$|\n*- .+중에서$', '', phrases[i])
-        phrases[i] = re.sub('&nbsp;<em>', '', phrases[i])
+        phrases[i] = re.sub('\n*---.+$|\n.+?중에서$', '', phrases[i])
+        phrases[i] = re.sub('&nbsp;<em>|</em>', '', phrases[i])
+        phrases[i] = re.sub('<b>.*?</b>', '', phrases[i])
 
-    phrases = [phrases[i] + '\r\n' for i in range(length)]
+    phrases = [phrases[i] + '\n' for i in range(length) if phrases[i] != '']
     return phrases
 
 
@@ -67,16 +68,16 @@ def main():
             title = parse_instance(book_page_data, 'title')
             author = parse_instance(book_page_data, 'author')
             publisher = parse_instance(book_page_data, 'publisher')
-            save_file.write('< ' + title +' - '+ author +' - '+ publisher + ' >\r\n')
-            #print('< ' + title +' - '+ author +' - '+ publisher + ' >')
+            save_file.write('Title: ' + title + '\n')
+            save_file.write('Author: ' + author + '\n')
+            save_file.write('Publisher: ' + publisher + '\n\n')
 
             phrases = parse_phrases(book_page_data)
 
             for phrase in phrases:
-                save_file.write(phrase)
-                #print(phrase+'\n')
+                save_file.write(phrase + '\n')
 
-            save_file.write('\r\n')
+            save_file.write('-----\n\n')
 
     save_file.close()
     print('[*] parsing done, file saved')
