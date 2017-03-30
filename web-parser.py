@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from urllib import request
+from bs4 import BeautifulSoup
 import re
 
 
 def get_date():
-    date = input('검색할 년 월 주를 입력하세요(xxxx-xx-x) : ')
-    #date = '2017-02-1'
+    #date = input('검색할 년 월 주를 입력하세요(xxxx-xx-x) : ')
+    date = '2017-02-1'
 
     if not bool(re.match('\d{4}-\d{2}-\d{1}', date)):
         print('포맷이 올바르지 않습니다.')
@@ -15,17 +16,32 @@ def get_date():
 
 
 def read_bids(page):
-    bids = re.findall('http://book\.naver\.com/bookdb/book_detail\.nhn\?bid=\d+', page)
+    soup = BeautifulSoup(page, 'html.parser')
+    bids = []
+
+    for link in soup.find_all('a'):
+        if link.get('class') is not None and link.get('class')[0] == 'N=a:bel.title':
+            bids.append(link.get('href'))
+
+    # bids = re.findall('http://book\.naver\.com/bookdb/book_detail\.nhn\?bid=\d+', page)
     bids = set(bids)
     return bids
 
 
 def parse_instance(page, instance):
+    soup = BeautifulSoup(page, 'html.parser')
+    instance_class = 'N=a:bil.' + instance
 
-    parsed_instance = re.findall(("class=\"N=a:bil\.%s.+?</a>" % instance), page)[0]
-    parsed_instance = re.findall("(?<=>).+?(?=</a>)", parsed_instance)[0]
-    parsed_instance = re.findall(".+?(?=&nbsp|$)", parsed_instance)[0]
-    return parsed_instance
+    for link in soup.find_all('a'):
+        if link.get('class') is not None and link.get('class')[0].startswith(instance_class):
+            text = re.findall("(?<=>).+?(?=</a>)", str(link))[0]
+            text = re.findall(".+?(?=<|$)", text)[0].strip()  # removing additional tags
+            return text
+
+    # parsed_instance = re.findall(("class=\"N=a:bil\.%s.+?</a>" % instance), page)[0]
+    # parsed_instance = re.findall("(?<=>).+?(?=</a>)", parsed_instance)[0]
+    # parsed_instance = re.findall(".+?(?=&nbsp|$)", parsed_instance)[0]
+    # return parsed_instance
 
 
 def parse_phrases(page):
@@ -49,30 +65,30 @@ def main():
     kyobo = {'cp': 'kyobo', 'max_index': 6}
 
     date = get_date()
-    save_file = open('save.txt', 'w')
+    save_file = open('save.txt', 'w', encoding='utf-8')
     print('[*] parsing started')
 
-    for i in range(1,kyobo['max_index']+1):
-        page = request.urlopen("http://book.naver.com/bestsell/bestseller_list.nhn?cp=%s&cate=01&bestWeek=%s&indexCount=1&type=list&page=%d" % (kyobo['cp'], date, i))
-        data = page.read().decode('utf-8')
+    for i in range(1, kyobo['max_index']+1):
+        book_list_page = request.urlopen("http://book.naver.com/bestsell/bestseller_list.nhn?cp=%s&cate=01&bestWeek=%s&indexCount=1&type=list&page=%d" % (kyobo['cp'], date, i))
+        book_list_page = book_list_page.read().decode('utf-8')
 
-        book_ids = read_bids(data)
+        book_ids = read_bids(book_list_page)
 
         for book_id in book_ids:
             book_page = request.urlopen(book_id)
-            book_page_data = book_page.read().decode('utf-8')
+            book_page = book_page.read().decode('utf-8')
 
-            if not bool(re.search('tit order35', book_page_data)):  # 대사 정보 유무
+            if not bool(re.search('tit order35', book_page)):  # 대사 정보 유무
                 continue
 
-            title = parse_instance(book_page_data, 'title')
-            author = parse_instance(book_page_data, 'author')
-            publisher = parse_instance(book_page_data, 'publisher')
+            title = parse_instance(book_page, 'title')
+            author = parse_instance(book_page, 'author')
+            publisher = parse_instance(book_page, 'publisher')
             save_file.write('Title: ' + title + '\n')
             save_file.write('Author: ' + author + '\n')
             save_file.write('Publisher: ' + publisher + '\n\n')
 
-            phrases = parse_phrases(book_page_data)
+            phrases = parse_phrases(book_page)
 
             for phrase in phrases:
                 save_file.write(phrase + '\n')
