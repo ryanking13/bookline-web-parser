@@ -5,8 +5,8 @@ import re
 
 
 def get_date():
-    #date = input('검색할 년 월 주를 입력하세요(xxxx-xx-x) : ')
-    date = '2017-02-1'
+    date = input('검색할 년 월 주를 입력하세요(xxxx-xx-x) : ')
+    #date = '2017-02-1'
 
     if not bool(re.match('\d{4}-\d{2}-\d{1}', date)):
         print('포맷이 올바르지 않습니다.')
@@ -23,7 +23,6 @@ def read_bids(page):
         if link.get('class') is not None and link.get('class')[0] == 'N=a:bel.title':
             bids.append(link.get('href'))
 
-    # bids = re.findall('http://book\.naver\.com/bookdb/book_detail\.nhn\?bid=\d+', page)
     bids = set(bids)
     return bids
 
@@ -45,19 +44,34 @@ def parse_instance(page, instance):
 
 
 def parse_phrases(page):
-    phrases = re.findall("(<h3 class=\"tit order35\">(.|\s)+?</div>)", page)[0][0]
-    phrases = re.findall("((?<=<p>)(.|\s)+?(?=</p>))", phrases)[0][0]
-    phrases = re.split('<br/><br/>|</p>\\r\\n\\t \\t\\t<p>', phrases)
+    # phrases = re.findall("(<h3 class=\"tit order35\">(.|\s)+?</div>)", page)[0][0]
 
-    length = len(phrases)
-    for i in range(length):
-        phrases[i] = re.sub('<br/>', '\n', phrases[i])
-        phrases[i] = re.sub('\n*---.+$|\n.+?중에서$', '', phrases[i])
-        phrases[i] = re.sub('&nbsp;<em>|</em>', '', phrases[i])
-        phrases[i] = re.sub('<b>.*?</b>', '', phrases[i])
+    soup = BeautifulSoup(page, 'html.parser')
 
-    phrases = [phrases[i] + '\n' for i in range(length) if phrases[i] != '']
-    return phrases
+    for header in soup.find_all('h3'):
+        if header.get('class') is not None and len(header.get('class')) > 1 \
+                and header.get('class')[1] == 'order35':
+
+            phrases = str(header.parent.p)
+            phrases = re.findall("((?<=<p>)(.|\s)+?(?=</p>))", phrases)[0][0]
+            phrases = re.split('<br/><br/>|</p>\\r\\n\\t \\t\\t<p>', phrases)
+
+            length = len(phrases)
+            for i in range(length):
+                phrases[i] = re.sub('<br/>', '\n', phrases[i])  # html <br> tag to newline
+                phrases[i] = re.sub('<em>|</em>', '', phrases[i])  # html <em> tag remove
+                phrases[i] = re.sub('<b>.*?</b>', '', phrases[i])  # title remove
+
+                # page info remove
+                # TODO: optimize
+                phrases[i] = re.sub('\n*---.+$|\n.+?중에서$', '', phrases[i])
+                phrases[i] = re.sub('---.+\n', '\n', phrases[i])
+                phrases[i] = re.sub('- .+?중에서', '', phrases[i])
+                phrases[i] = re.sub('- \d+쪽에서', '', phrases[i])
+                phrases[i] = re.sub('\d+$', '', phrases[i])
+
+            phrases = [phrases[i] + '\n' for i in range(length) if phrases[i] != '']
+            return phrases
 
 
 def main():
