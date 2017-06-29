@@ -78,14 +78,21 @@ def main():
 
     kyobo = {'cp': 'kyobo', 'max_index': 6}
 
+    # 책 정보를 찾아오고자 하는 주를 입력받는다
     date = get_date()
+    # 최종 output이 저장될 파일
     save_file = open('save.txt', 'w', encoding='utf-8')
+
+    bid_link = "http://book.naver.com/bookdb/book_detail.nhn?bid="
+
     print('[*] parsing started')
 
     for i in range(1, kyobo['max_index']+1):
-        book_list_page = request.urlopen("http://book.naver.com/bestsell/bestseller_list.nhn?cp=%s&cate=01&bestWeek=%s&indexCount=1&type=list&page=%d" % (kyobo['cp'], date, i))
+        url = "http://book.naver.com/bestsell/bestseller_list.nhn?cp=%s&cate=01&bestWeek=%s&indexCount=1&type=list&page=%d" % (kyobo['cp'], date, i)
+        book_list_page = request.urlopen(url)
         book_list_page = book_list_page.read().decode('utf-8')
 
+        # 해당 페이지의 책 id를 모두 가져온다
         book_ids = read_bids(book_list_page)
 
         for book_id in book_ids:
@@ -100,7 +107,9 @@ def main():
             publisher = parse_instance(book_page, 'publisher')
             save_file.write('Title: ' + title + '\n')
             save_file.write('Author: ' + author + '\n')
-            save_file.write('Publisher: ' + publisher + '\n\n')
+            save_file.write('Publisher: ' + publisher + '\n')
+            save_file.write('Link: ' + book_id + '\n')
+            save_file.write('ID: ' + book_id.split('=')[-1] + '\n\n')
 
             phrases = parse_phrases(book_page)
 
