@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from urllib import request
+from urllib import request, parse
 from bs4 import BeautifulSoup
+from bookstores import kyobo
 import re
 
 
@@ -76,7 +77,7 @@ def parse_phrases(page):
 
 def main():
 
-    kyobo = {'cp': 'kyobo', 'max_index': 6}
+    # kyobo = {'cp': 'kyobo', 'max_index': 6}
 
     # 책 정보를 찾아오고자 하는 주를 입력받는다
     date = get_date()
@@ -88,8 +89,11 @@ def main():
     print('[*] parsing started')
 
     for i in range(1, kyobo['max_index']+1):
-        url = "http://book.naver.com/bestsell/bestseller_list.nhn?cp=%s&cate=01&bestWeek=%s&indexCount=1&type=list&page=%d" % (kyobo['cp'], date, i)
-        book_list_page = request.urlopen(url)
+        # url = "http://book.naver.com/bestsell/bestseller_list.nhn?cp=%s&cate=01&bestWeek=%s&indexCount=1&type=list&page=%d" % (kyobo['cp'], date, i)
+        url = "http://book.naver.com/bestsell/bestseller_list.nhn"
+        # book_list_page = request.urlopen(url)
+        data = parse.urlencode({'cp': kyobo['cp'], 'cate': kyobo['category']['novel'], 'bestWeek': date, 'page': i}).encode('utf-8')
+        book_list_page = request.urlopen(url, data=data)
         book_list_page = book_list_page.read().decode('utf-8')
 
         # 해당 페이지의 책 id를 모두 가져온다
