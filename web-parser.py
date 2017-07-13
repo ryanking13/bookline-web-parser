@@ -3,16 +3,20 @@ from urllib import request, parse
 from bs4 import BeautifulSoup
 from bookstores import kyobo
 import re
-
+import sys
 
 # 사용자로부터 날짜 정보를 입력받는다
 def get_date():
-    date = input('검색할 년 월 주를 입력하세요(xxxx-xx-x) : ')
-    #date = '2017-02-1'
 
-    if not bool(re.match('\d{4}-\d{2}-\d{1}', date)):
-        print('포맷이 올바르지 않습니다.')
-        exit(0)
+    if len(sys.argv) > 1:
+        date = sys.argv[1]
+    else:
+        date = input('검색할 년 월 주를 입력하세요(xxxx-xx-x) : ')
+        #date = '2017-02-1'
+
+        if not bool(re.match('\d{4}-\d{2}-\d{1}', date)):
+            print('포맷이 올바르지 않습니다.')
+            exit(0)
 
     return date
 
