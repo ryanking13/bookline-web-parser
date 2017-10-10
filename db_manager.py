@@ -10,9 +10,10 @@ def main():
     cursor.execute('SELECT * FROM entries')
     l = cursor.fetchall()
     idx = len(l)
-    #print(l)
+    # print(l)
 
-    file_name = input("file name that contains info which will be saved in db :")
+    # file_name = input("file name that contains info which will be saved in db :")
+    file_name = "save.txt"
     file = open(file_name, 'rt', encoding='utf-8')
     data = file.read()
     data = data.split('-----')
